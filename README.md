@@ -156,16 +156,29 @@ twelve months, so the revenue chart has a real shape on first run.
 ## Tests
 
 ```bash
-cd backend/nest
-npm run test:e2e
+cd backend/nest && pnpm test:e2e     # 12 tests, needs a database
+cd frontend      && pnpm test        # 25 tests, no database
 ```
 
-The suite registers two workspaces and asserts the boundary between them: no
-listing leak, no cross-tenant status change, no cross-tenant delete, no
-dashboard aggregate crossing the line, and a rejected request when the bearer
-token is missing. It also opens two demo sandboxes at once to confirm that what
-one visitor deletes stays visible to the other, and that a token outliving its
-workspace is rejected rather than silently showing an empty dashboard.
+**The API suite is about the tenant boundary**, because that is the one property
+whose failure is silent and expensive. It registers two workspaces and checks
+the line between them from both sides: no listing leak, no cross-tenant update,
+no cross-tenant delete, no dashboard aggregate crossing over, and a rejected
+request when the bearer token is missing. It opens two demo sandboxes at once to
+confirm that what one visitor deletes stays visible to the other, checks that a
+token outliving its workspace is rejected rather than quietly showing an empty
+dashboard, and drives an account into lockout to prove the backoff works.
+
+**The frontend suite covers the logic that is easy to break and hard to notice**:
+that the edit dialog patches only the fields that actually changed rather than
+overwriting the whole record, that a value typed as `"18400.00"` is not treated
+as a change from `18400`, that the API client attaches the bearer token and
+surfaces the server's own error message, and that a modal traps Tab, closes on
+Escape and hands focus back to whatever opened it.
+
+CI runs both builds and the frontend suite on every push. The e2e suite is left
+out of CI deliberately: it needs a real Postgres, and pointing every branch at
+the deployed database would let a test run delete rows the live demo is serving.
 
 ## API
 

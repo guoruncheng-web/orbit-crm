@@ -60,6 +60,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm test
+
       - run: pnpm build
         env:
           # Only needs to be a valid URL at build time; the real value comes
