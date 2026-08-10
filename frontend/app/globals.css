@@ -341,11 +341,6 @@ main {
   z-index: 10;
 }
 
-.menu,
-.mobile-logo {
-  display: none;
-}
-
 .icon-button,
 .menu {
   border: 0;
@@ -356,6 +351,14 @@ main {
   display: grid;
   place-items: center;
   color: var(--muted);
+}
+
+/* Must come after the rule above: both are single-class selectors, so the
+   later one wins and an earlier `display: none` would be undone. The drawer
+   trigger and the small-screen wordmark only exist below the breakpoint. */
+.menu,
+.mobile-logo {
+  display: none;
 }
 
 .icon-button:hover,
