@@ -178,9 +178,10 @@ type FormState = {
 /**
  * The difference between what is on screen and what is stored.
  *
- * Sending the whole record on every save would overwrite any field a teammate
- * changed while this dialog sat open. `value` is compared numerically because
- * the input holds a string, and "18400" and 18400 are the same contract.
+ * Sending the whole record on every save would overwrite any field that changed
+ * elsewhere while this dialog sat open — a second tab, another device. `value`
+ * is compared numerically because the input holds a string, and "18400" and
+ * 18400 are the same contract.
  */
 export function changedFields(
   form: FormState,

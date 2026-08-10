@@ -41,6 +41,17 @@ boundary do its job.
   client could edit to read someone else's data.
 - **Interactive API documentation** generated from the code at `/api/docs`.
 
+## What it deliberately does not do
+
+An organization has exactly one user. There is no invite flow, no roles and no
+permissions, so "multi-tenant" here means the boundary between organizations,
+not a hierarchy inside one. Adding seats is a real feature — invitations,
+pending states, an owner who cannot remove themselves — and half of it would be
+worse than none, so the scope stops at the boundary the tests actually cover.
+
+There is also no third-party integration: no payments, no email, no webhooks.
+Nothing here talks to a service it does not own.
+
 ## Architecture
 
 ```

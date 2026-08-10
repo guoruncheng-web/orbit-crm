@@ -65,8 +65,8 @@ export default function LoginPage() {
         <div className="auth-pitch">
           <h1>The workspace behind every client relationship.</h1>
           <p>
-            Track your pipeline, watch revenue build month over month, and keep every account in one
-            place your whole team can see.
+            Track your pipeline, watch revenue build month over month, and know where every account
+            stands without opening a spreadsheet.
           </p>
         </div>
         {/* These describe the workspace the demo hands out, so they match what

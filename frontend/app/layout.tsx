@@ -21,7 +21,8 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Orbit CRM",
-  description: "A multi-tenant CRM workspace for client teams — Next.js, NestJS and PostgreSQL.",
+  description:
+    "A multi-tenant CRM workspace where every organization sees only its own accounts — Next.js, NestJS and PostgreSQL.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
