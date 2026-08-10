@@ -1,5 +1,7 @@
 # Orbit CRM
 
+[![CI](https://github.com/guoruncheng-web/orbit-crm/actions/workflows/ci.yml/badge.svg)](https://github.com/guoruncheng-web/orbit-crm/actions/workflows/ci.yml)
+
 A multi-tenant CRM workspace. Sign up, and you get an organization of your own;
 every customer, metric and chart you see afterwards belongs to it and to nobody
 else.
