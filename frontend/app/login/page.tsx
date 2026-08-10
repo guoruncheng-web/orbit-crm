@@ -69,10 +69,12 @@ export default function LoginPage() {
             place your whole team can see.
           </p>
         </div>
+        {/* These describe the workspace the demo hands out, so they match what
+            is actually seeded rather than being decorative round numbers. */}
         <dl className="auth-stats">
           <div>
-            <dt>Pipeline tracked</dt>
-            <dd>$412k</dd>
+            <dt>Pipeline</dt>
+            <dd>$428,900</dd>
           </div>
           <div>
             <dt>Accounts</dt>
