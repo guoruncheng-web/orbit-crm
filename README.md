@@ -55,30 +55,25 @@ environment, and the frontend bundle carries nothing but the public API URL.
 
 ```
 frontend/       Next.js 15 app — dashboard, auth screen, API client
-backend/nest/   NestJS 11 API — the deployed backend
-backend/demo/   Spring Boot implementation of the same endpoints (see below)
+backend/nest/   NestJS 11 API — schema, auth, business logic
 supabase/       Connection and RLS notes
 ```
 
-### Why there are two backends
-
-The API was first written in Spring Boot and later reimplemented in NestJS,
-which is what actually ships. Both target the same tables, so `backend/demo` is
-kept as a working reference rather than deleted — `docker compose --profile java
-up` runs it on port 8081 against the same database.
-
-The Java version predates authentication: it trusts an `X-Organization-Id`
-request header, which any client could set to any value. The NestJS version
-takes the organization from a signed token instead. That difference is the point
-of keeping both.
+The API began as a Spring Boot service and was reimplemented in NestJS. The Java
+version is not in the tree: it predated authentication, trusted an
+`X-Organization-Id` header any client could forge, and its Flyway migrations
+would now fight Prisma over ownership of the same tables. Keeping a second
+implementation that could not actually run would have been a claim this README
+could not back up. It remains in the first commit for anyone curious about the
+starting point.
 
 ## Design decisions worth calling out
 
 **Status is a `varchar` with a `CHECK` constraint, not a Postgres enum.** A
-native enum would be tidier, but adding a value to one requires a migration that
-cannot run inside a transaction, and it complicates the JPA mapping in the Java
-implementation. The check constraint gets the same guarantee at the database
-level.
+native enum reads better in `\d customers`, but adding a value to one is a
+migration that cannot run inside a transaction, and values can never be removed
+or reordered afterwards. A check constraint is ordinary transactional DDL and
+carries the same guarantee.
 
 **Cross-tenant writes use `updateMany`/`deleteMany`.** Loading a row and then
 comparing its `organizationId` in application code works until someone forgets

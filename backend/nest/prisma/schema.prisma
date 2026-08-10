@@ -47,9 +47,11 @@ model User {
   @@map("users")
 }
 
-/// Stored as varchar rather than a native Postgres enum so the Spring Boot
-/// implementation in ../demo can run against the exact same schema. A CHECK
-/// constraint added in the initial migration enforces the allowed values.
+/// `status` is a varchar guarded by a CHECK constraint rather than a native
+/// Postgres enum: adding a value to an enum type is a migration that cannot run
+/// inside a transaction, and values can never be removed or reordered. A CHECK
+/// constraint is an ordinary transactional DDL change and gives the same
+/// database-level guarantee.
 model Customer {
   id             String   @id @default(uuid()) @db.Uuid
   organizationId String   @map("organization_id") @db.Uuid

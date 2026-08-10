@@ -1,8 +1,7 @@
 # Local stack: Postgres, the NestJS API and the Next.js frontend.
 #
-# The Spring Boot service in ./backend/demo is kept as an alternative
-# implementation of the same API against the same schema; run it with
-# `docker compose --profile java up` instead of the `api` service.
+# The API applies pending migrations on boot, so `docker compose up --build`
+# against an empty volume gives a working database without extra steps.
 
 services:
   db:
@@ -46,21 +45,6 @@ services:
       - "3000:3000"
     depends_on:
       - api
-
-  # Same endpoints, same database, implemented in Java.
-  java-api:
-    profiles: ["java"]
-    build: ./backend/demo
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-orbit}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-orbit}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-orbit}
-      APP_CORS_ALLOWED_ORIGINS: http://localhost:3000
-    ports:
-      - "8081:8080"
-    depends_on:
-      db:
-        condition: service_healthy
 
 volumes:
   orbit-postgres:
