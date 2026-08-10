@@ -1,0 +1,69 @@
+// Orbit CRM data model.
+//
+// `url` points at the Supabase transaction pooler (PgBouncer, port 6543) because
+// serverless functions open a new connection per invocation and would otherwise
+// exhaust Postgres. `directUrl` points at the session pooler (port 5432), which
+// Prisma Migrate needs for advisory locks and DDL.
+
+generator client {
+  provider = "prisma-client-js"
+  // The client is generated on the build machine, so `native` already covers
+  // Vercel. The explicit target keeps a locally built bundle deployable too.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(120)
+  /// Throwaway workspace handed to a demo visitor. Reaped after a day so the
+  /// public demo cannot accumulate rows without bound.
+  isDemo    Boolean  @default(false) @map("is_demo")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users     User[]
+  customers Customer[]
+
+  @@index([isDemo, createdAt])
+  @@map("organizations")
+}
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  email          String   @unique @db.VarChar(255)
+  passwordHash   String   @map("password_hash") @db.VarChar(255)
+  name           String   @db.VarChar(120)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+/// Stored as varchar rather than a native Postgres enum so the Spring Boot
+/// implementation in ../demo can run against the exact same schema. A CHECK
+/// constraint added in the initial migration enforces the allowed values.
+model Customer {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String   @db.VarChar(120)
+  company        String   @db.VarChar(160)
+  email          String   @db.VarChar(255)
+  status         String   @db.VarChar(24)
+  value          Decimal  @default(0) @db.Decimal(12, 2)
+  lastContact    DateTime @map("last_contact") @db.Date
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([organizationId, status])
+  @@map("customers")
+}
