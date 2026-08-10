@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 
 /**
  * Builds the application without listening on a port, so the same wiring backs
@@ -11,6 +12,8 @@ export async function createApp(): Promise<INestApplication> {
   const app = await NestFactory.create(AppModule, { logger: ['error', 'warn', 'log'] });
 
   app.setGlobalPrefix('api');
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({

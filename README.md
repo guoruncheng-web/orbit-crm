@@ -89,6 +89,21 @@ own connection, so `DATABASE_URL` points at Supabase's transaction pooler while
 resolves to IPv6 only and is unreachable from Vercel. Details in
 `supabase/README.md`.
 
+**Failed sign-ins are counted in Postgres, not in memory.** The obvious way to
+rate-limit is an in-process counter, and on a serverless deployment it is close
+to worthless: consecutive attempts land on different instances, and every cold
+start hands the attacker a clean slate. The count lives on the user row instead,
+and the lockout backs off — 1, 2, 4, 8 minutes up to an hour — so an owner who
+mistypes their password a few times is not shut out for the afternoon while an
+automated guessing run is stopped cold.
+
+**Unhandled errors are translated before they leave the process.** A Prisma
+error that escapes as-is carries the failing query, the model name and sometimes
+the column values, which hands an attacker a free map of the schema. A global
+filter logs the real error server-side and answers with a generic message, with
+only the few Prisma codes that mean something to a client — unique violation,
+missing row, bad foreign key — mapped to real status codes.
+
 **Demo visitors get a tenant each, not a shared login.** A single public demo
 account is one visitor away from being emptied out, and whoever arrives next
 judges the work by the wreckage. Minting a throwaway tenant per visitor costs
@@ -164,7 +179,7 @@ workspace is rejected rather than silently showing an empty dashboard.
 | `GET` | `/api/auth/me` | Return the current principal |
 | `GET` | `/api/customers` | Page through customers (`q`, `status`, `page`, `size`) |
 | `POST` | `/api/customers` | Create a customer |
-| `PATCH` | `/api/customers/:id/status` | Move a customer to another status |
+| `PATCH` | `/api/customers/:id` | Update any subset of a customer's fields |
 | `DELETE` | `/api/customers/:id` | Delete a customer |
 | `GET` | `/api/dashboard/summary` | Metrics, status breakdown, trailing revenue |
 | `GET` | `/api/health` | Liveness probe that round-trips the database |

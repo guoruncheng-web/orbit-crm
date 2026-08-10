@@ -23,9 +23,11 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Pencil,
   Plus,
   Search,
   Settings,
+  Trash2,
   TrendingUp,
   Users,
   Wallet,
@@ -33,6 +35,7 @@ import {
 } from "lucide-react";
 import { Customer, PageResult, Status, Summary, api } from "@/lib/api";
 import { isUnauthorized, useAuth } from "@/lib/auth";
+import { Modal } from "@/components/modal";
 
 type View = "overview" | "customers";
 
@@ -79,6 +82,7 @@ function Dashboard({
   const [status, setStatus] = useState<Status | "">("");
   const [page, setPage] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<Customer | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Customer | null>(null);
   const [mobileNav, setMobileNav] = useState(false);
   const search = useDebounced(query, 300);
@@ -121,7 +125,7 @@ function Dashboard({
 
   const changeStatus = useMutation({
     mutationFn: ({ id, next }: { id: string; next: Status }) =>
-      api<Customer>(`/customers/${id}/status`, {
+      api<Customer>(`/customers/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: next }),
       }),
@@ -594,14 +598,24 @@ function Dashboard({
                           {formatDate(customer.lastContact)}
                         </td>
                         <td>
-                          <button
-                            className="delete"
-                            title={`Delete ${customer.name}`}
-                            aria-label={`Delete ${customer.name}`}
-                            onClick={() => setPendingDelete(customer)}
-                          >
-                            <X />
-                          </button>
+                          <div className="row-actions">
+                            <button
+                              className="row-action"
+                              title={`Edit ${customer.name}`}
+                              aria-label={`Edit ${customer.name}`}
+                              onClick={() => setEditing(customer)}
+                            >
+                              <Pencil />
+                            </button>
+                            <button
+                              className="row-action delete"
+                              title={`Delete ${customer.name}`}
+                              aria-label={`Delete ${customer.name}`}
+                              onClick={() => setPendingDelete(customer)}
+                            >
+                              <Trash2 />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -648,9 +662,17 @@ function Dashboard({
       </main>
 
       {showCreate && (
-        <CreateCustomer
+        <CustomerDialog
           onClose={() => setShowCreate(false)}
-          onCreated={refresh}
+          onSaved={refresh}
+        />
+      )}
+
+      {editing && (
+        <CustomerDialog
+          customer={editing}
+          onClose={() => setEditing(null)}
+          onSaved={refresh}
         />
       )}
 
@@ -777,198 +799,217 @@ function ConfirmDelete({
   onConfirm: () => void;
 }) {
   return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={(event) =>
-        event.target === event.currentTarget && onCancel()
-      }
+    <Modal
+      role="alertdialog"
+      labelledBy="confirm-delete-title"
+      onClose={onCancel}
     >
-      <div
-        className="modal"
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="confirm-delete-title"
-      >
-        <div className="modal-head">
-          <div>
-            <p className="eyebrow">Delete customer</p>
-            <h2 id="confirm-delete-title">Remove {customer.name}?</h2>
-          </div>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={onCancel}
-            aria-label="Close"
-          >
-            <X />
-          </button>
+      <div className="modal-head">
+        <div>
+          <p className="eyebrow">Delete customer</p>
+          <h2 id="confirm-delete-title">Remove {customer.name}?</h2>
         </div>
-
-        <p className="modal-copy">
-          {customer.company} leaves your book along with its{" "}
-          {money(customer.value)} of contract value. This cannot be undone.
-        </p>
-
-        {error instanceof Error && (
-          <p className="form-error">{error.message}</p>
-        )}
-
-        <div className="modal-actions">
-          <button type="button" className="secondary" onClick={onCancel}>
-            Keep customer
-          </button>
-          <button
-            type="button"
-            className="primary danger"
-            disabled={pending}
-            onClick={onConfirm}
-          >
-            {pending ? "Deleting…" : "Delete customer"}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={onCancel}
+          aria-label="Close"
+        >
+          <X />
+        </button>
       </div>
-    </div>
+
+      <p className="modal-copy">
+        {customer.company} leaves your book along with its{" "}
+        {money(customer.value)} of contract value. This cannot be undone.
+      </p>
+
+      {error instanceof Error && <p className="form-error">{error.message}</p>}
+
+      <div className="modal-actions">
+        <button type="button" className="secondary" onClick={onCancel}>
+          Keep customer
+        </button>
+        <button
+          type="button"
+          className="primary danger"
+          disabled={pending}
+          onClick={onConfirm}
+        >
+          {pending ? "Deleting…" : "Delete customer"}
+        </button>
+      </div>
+    </Modal>
   );
 }
 
-function CreateCustomer({
+/**
+ * One dialog for both creating and editing. Passing `customer` switches it to
+ * edit mode: the API takes a partial body, so an edit sends only the fields
+ * that actually changed rather than rewriting the whole record.
+ */
+function CustomerDialog({
+  customer,
   onClose,
-  onCreated,
+  onSaved,
 }: {
+  customer?: Customer;
   onClose: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
 }) {
+  const editing = customer != null;
+
   const [form, setForm] = useState({
-    name: "",
-    company: "",
-    email: "",
-    status: "LEAD" as Status,
-    value: "",
+    name: customer?.name ?? "",
+    company: customer?.company ?? "",
+    email: customer?.email ?? "",
+    status: customer?.status ?? ("LEAD" as Status),
+    value: customer ? String(customer.value) : "",
   });
 
-  const create = useMutation({
-    mutationFn: () =>
-      api<Customer>("/customers", {
-        method: "POST",
-        body: JSON.stringify({ ...form, value: Number(form.value) }),
-      }),
+  const save = useMutation({
+    mutationFn: () => {
+      if (!customer) {
+        return api<Customer>("/customers", {
+          method: "POST",
+          body: JSON.stringify({ ...form, value: Number(form.value) }),
+        });
+      }
+
+      const changed: Record<string, string | number> = {};
+      if (form.name !== customer.name) changed.name = form.name;
+      if (form.company !== customer.company) changed.company = form.company;
+      if (form.email !== customer.email) changed.email = form.email;
+      if (form.status !== customer.status) changed.status = form.status;
+      if (Number(form.value) !== customer.value)
+        changed.value = Number(form.value);
+
+      // The API rejects an empty patch, and there is nothing to send anyway.
+      if (Object.keys(changed).length === 0) return Promise.resolve(customer);
+
+      return api<Customer>(`/customers/${customer.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(changed),
+      });
+    },
     onSuccess: () => {
-      onCreated();
+      onSaved();
       onClose();
     },
   });
 
   return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+    <Modal
+      as="form"
+      labelledBy="customer-dialog-title"
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        save.mutate();
+      }}
     >
-      <form
-        className="modal"
-        onSubmit={(event) => {
-          event.preventDefault();
-          create.mutate();
-        }}
-      >
-        <div className="modal-head">
-          <div>
-            <p className="eyebrow">New account</p>
-            <h2>Add a customer</h2>
-          </div>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={onClose}
-            aria-label="Close"
+      <div className="modal-head">
+        <div>
+          <p className="eyebrow">{editing ? "Edit account" : "New account"}</p>
+          <h2 id="customer-dialog-title">
+            {editing ? customer.name : "Add a customer"}
+          </h2>
+        </div>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X />
+        </button>
+      </div>
+
+      <div className="form-grid">
+        <label>
+          Full name
+          <input
+            required
+            value={form.name}
+            onChange={(event) => setForm({ ...form, name: event.target.value })}
+            placeholder="Jamie Chen"
+          />
+        </label>
+        <label>
+          Company
+          <input
+            required
+            value={form.company}
+            onChange={(event) =>
+              setForm({ ...form, company: event.target.value })
+            }
+            placeholder="Acme Inc."
+          />
+        </label>
+        <label className="wide">
+          Email address
+          <input
+            required
+            type="email"
+            value={form.email}
+            onChange={(event) =>
+              setForm({ ...form, email: event.target.value })
+            }
+            placeholder="jamie@acme.com"
+          />
+        </label>
+        <label>
+          Pipeline status
+          <select
+            value={form.status}
+            onChange={(event) =>
+              setForm({ ...form, status: event.target.value as Status })
+            }
           >
-            <X />
-          </button>
-        </div>
+            {STATUSES.map((entry) => (
+              <option key={entry} value={entry}>
+                {STATUS_LABEL[entry]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Contract value
+          <input
+            required
+            min="0"
+            step="0.01"
+            type="number"
+            value={form.value}
+            onChange={(event) =>
+              setForm({ ...form, value: event.target.value })
+            }
+            placeholder="12000"
+          />
+        </label>
+      </div>
 
-        <div className="form-grid">
-          <label>
-            Full name
-            <input
-              required
-              value={form.name}
-              onChange={(event) =>
-                setForm({ ...form, name: event.target.value })
-              }
-              placeholder="Jamie Chen"
-            />
-          </label>
-          <label>
-            Company
-            <input
-              required
-              value={form.company}
-              onChange={(event) =>
-                setForm({ ...form, company: event.target.value })
-              }
-              placeholder="Acme Inc."
-            />
-          </label>
-          <label className="wide">
-            Email address
-            <input
-              required
-              type="email"
-              value={form.email}
-              onChange={(event) =>
-                setForm({ ...form, email: event.target.value })
-              }
-              placeholder="jamie@acme.com"
-            />
-          </label>
-          <label>
-            Pipeline status
-            <select
-              value={form.status}
-              onChange={(event) =>
-                setForm({ ...form, status: event.target.value as Status })
-              }
-            >
-              {STATUSES.map((entry) => (
-                <option key={entry} value={entry}>
-                  {STATUS_LABEL[entry]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Contract value
-            <input
-              required
-              min="0"
-              step="0.01"
-              type="number"
-              value={form.value}
-              onChange={(event) =>
-                setForm({ ...form, value: event.target.value })
-              }
-              placeholder="12000"
-            />
-          </label>
-        </div>
+      {save.isError && (
+        <p className="form-error">
+          {save.error instanceof Error
+            ? save.error.message
+            : "Could not save this customer."}
+        </p>
+      )}
 
-        {create.isError && (
-          <p className="form-error">
-            {create.error instanceof Error
-              ? create.error.message
-              : "Could not create customer."}
-          </p>
-        )}
-
-        <div className="modal-actions">
-          <button type="button" className="secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="primary" disabled={create.isPending}>
-            {create.isPending ? "Adding…" : "Add customer"}
-          </button>
-        </div>
-      </form>
-    </div>
+      <div className="modal-actions">
+        <button type="button" className="secondary" onClick={onClose}>
+          Cancel
+        </button>
+        <button className="primary" disabled={save.isPending}>
+          {save.isPending
+            ? "Saving…"
+            : editing
+              ? "Save changes"
+              : "Add customer"}
+        </button>
+      </div>
+    </Modal>
   );
 }
 

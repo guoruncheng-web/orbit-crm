@@ -16,7 +16,13 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { CurrentUser as CurrentUserType } from '../auth/jwt.strategy';
 import { CustomersService } from './customers.service';
-import { CreateCustomerDto, CustomerDto, CustomerPageDto, QueryCustomersDto, UpdateStatusDto } from './dto/customer.dto';
+import {
+  CreateCustomerDto,
+  CustomerDto,
+  CustomerPageDto,
+  QueryCustomersDto,
+  UpdateCustomerDto,
+} from './dto/customer.dto';
 
 @ApiTags('customers')
 @ApiBearerAuth()
@@ -37,14 +43,14 @@ export class CustomersController {
     return this.customers.create(user.organizationId, dto);
   }
 
-  @Patch(':id/status')
-  @ApiOperation({ summary: 'Move a customer to another pipeline status' })
-  changeStatus(
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update any subset of a customer’s fields' })
+  update(
     @CurrentUser() user: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateStatusDto,
+    @Body() dto: UpdateCustomerDto,
   ): Promise<CustomerDto> {
-    return this.customers.changeStatus(user.organizationId, id, dto.status);
+    return this.customers.update(user.organizationId, id, dto);
   }
 
   @Delete(':id')

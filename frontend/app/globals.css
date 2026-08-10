@@ -932,7 +932,13 @@ td small {
   background: var(--risk-wash);
 }
 
-.delete {
+.row-actions {
+  display: flex;
+  gap: var(--s1);
+  justify-content: flex-end;
+}
+
+.row-action {
   width: 30px;
   height: 30px;
   border: 0;
@@ -943,12 +949,17 @@ td small {
   place-items: center;
 }
 
-.delete:hover {
+.row-action:hover {
+  color: var(--signal);
+  background: var(--signal-wash);
+}
+
+.row-action.delete:hover {
   color: var(--risk);
   background: var(--risk-wash);
 }
 
-.delete svg {
+.row-action svg {
   width: 15px;
 }
 

@@ -82,12 +82,71 @@ describe('Tenant isolation (e2e)', () => {
     expect(response.body.content.map((row: { id: string }) => row.id)).toContain(acmeCustomerId);
   });
 
-  it('refuses a cross-tenant status change', async () => {
+  it('refuses a cross-tenant update', async () => {
     await request(http)
-      .patch(`/api/customers/${acmeCustomerId}/status`)
+      .patch(`/api/customers/${acmeCustomerId}`)
       .set('Authorization', `Bearer ${globex.token}`)
-      .send({ status: 'AT_RISK' })
+      .send({ status: 'AT_RISK', name: 'Renamed by a stranger' })
       .expect(404);
+
+    const untouched = await app.get(PrismaService).customer.findUniqueOrThrow({
+      where: { id: acmeCustomerId },
+    });
+
+    expect(untouched.name).toBe('Olivia Martin');
+    expect(untouched.status).toBe('ACTIVE');
+  });
+
+  it('updates only the fields it was given', async () => {
+    const before = await app.get(PrismaService).customer.findUniqueOrThrow({
+      where: { id: acmeCustomerId },
+    });
+
+    const response = await request(http)
+      .patch(`/api/customers/${acmeCustomerId}`)
+      .set('Authorization', `Bearer ${acme.token}`)
+      .send({ company: 'Northstar Laboratories' })
+      .expect(200);
+
+    expect(response.body.company).toBe('Northstar Laboratories');
+    expect(response.body.name).toBe(before.name);
+    expect(response.body.value).toBe(Number(before.value));
+    // Renaming a company is not a contact event, so the date must not move.
+    expect(response.body.lastContact).toBe(before.lastContact.toISOString().slice(0, 10));
+  });
+
+  it('rejects an update that carries no fields', async () => {
+    await request(http)
+      .patch(`/api/customers/${acmeCustomerId}`)
+      .set('Authorization', `Bearer ${acme.token}`)
+      .send({})
+      .expect(400);
+  });
+
+  it('locks an account after repeated failed sign-ins', async () => {
+    const email = `locked-${process.pid}-${Date.now()}@example.test`;
+
+    const created = await request(http)
+      .post('/api/auth/register')
+      .send({ name: 'Owner', organizationName: 'lockme', email, password: 'password123' })
+      .expect(201);
+
+    // Five failures are allowed; the sixth starts the backoff.
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      await request(http).post('/api/auth/login').send({ email, password: 'wrong-password' }).expect(401);
+    }
+
+    // The correct password is now refused too — that is the point of a lockout.
+    const locked = await request(http)
+      .post('/api/auth/login')
+      .send({ email, password: 'password123' })
+      .expect(401);
+
+    expect(locked.body.message).toMatch(/too many failed attempts/i);
+
+    await app.get(PrismaService).organization.delete({
+      where: { id: created.body.user.organizationId },
+    });
   });
 
   it('refuses a cross-tenant delete and leaves the row intact', async () => {

@@ -30,10 +30,42 @@ export class CreateCustomerDto {
   value!: number;
 }
 
-export class UpdateStatusDto {
-  @ApiProperty({ enum: CUSTOMER_STATUSES })
+/**
+ * Every field is optional so a caller can send only what changed. The inline
+ * status dropdown sends `{ status }`; the edit dialog sends the whole record.
+ * `ValidationPipe({ whitelist, forbidNonWhitelisted })` rejects anything else,
+ * so an unknown key is a 400 rather than a silently ignored write.
+ */
+export class UpdateCustomerDto {
+  @ApiPropertyOptional({ example: 'Jamie Chen', maxLength: 120 })
+  @IsOptional()
+  @IsNotEmpty()
+  @MaxLength(120)
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'Acme Inc.', maxLength: 160 })
+  @IsOptional()
+  @IsNotEmpty()
+  @MaxLength(160)
+  company?: string;
+
+  @ApiPropertyOptional({ example: 'jamie@acme.com', maxLength: 255 })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(255)
+  email?: string;
+
+  @ApiPropertyOptional({ enum: CUSTOMER_STATUSES })
+  @IsOptional()
   @IsIn(CUSTOMER_STATUSES)
-  status!: CustomerStatus;
+  status?: CustomerStatus;
+
+  @ApiPropertyOptional({ example: 12000, minimum: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  value?: number;
 }
 
 export class QueryCustomersDto {

@@ -41,6 +41,12 @@ model User {
   name           String   @db.VarChar(120)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  /// Brute-force protection. Counted in the database rather than in memory
+  /// because each serverless invocation may run in a different instance, and a
+  /// per-instance counter is one Vercel cold start away from being reset.
+  failedLogins   Int       @default(0) @map("failed_logins")
+  lockedUntil    DateTime? @map("locked_until") @db.Timestamptz(6)
+
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])

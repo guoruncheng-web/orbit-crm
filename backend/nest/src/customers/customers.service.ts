@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Customer } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CustomerStatus } from './customer-status';
-import { CreateCustomerDto, CustomerDto, CustomerPageDto, QueryCustomersDto } from './dto/customer.dto';
+import {
+  CreateCustomerDto,
+  CustomerDto,
+  CustomerPageDto,
+  QueryCustomersDto,
+  UpdateCustomerDto,
+} from './dto/customer.dto';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -65,12 +71,30 @@ export class CustomersService {
     return toDto(customer);
   }
 
-  async changeStatus(organizationId: string, id: string, status: CustomerStatus): Promise<CustomerDto> {
+  async update(organizationId: string, id: string, dto: UpdateCustomerDto): Promise<CustomerDto> {
+    const data: Prisma.CustomerUpdateManyMutationInput = {};
+
+    if (dto.name !== undefined) data.name = dto.name.trim();
+    if (dto.company !== undefined) data.company = dto.company.trim();
+    if (dto.email !== undefined) data.email = dto.email.trim().toLowerCase();
+    if (dto.value !== undefined) data.value = new Prisma.Decimal(dto.value);
+
+    if (dto.status !== undefined) {
+      data.status = dto.status;
+      // Moving someone through the pipeline is itself a contact event; renaming
+      // their company is not, so the timestamp only moves with the status.
+      data.lastContact = today();
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('Provide at least one field to update');
+    }
+
     // updateMany rather than update, so the organizationId is part of the WHERE
     // clause instead of a check performed after the row is already loaded.
     const { count } = await this.prisma.customer.updateMany({
       where: { id, organizationId },
-      data: { status, lastContact: today() },
+      data,
     });
 
     if (count === 0) {

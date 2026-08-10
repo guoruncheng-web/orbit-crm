@@ -7,6 +7,9 @@ import type { JwtPayload } from './jwt.strategy';
 
 const BCRYPT_ROUNDS = 10;
 
+/** Failures allowed before the account starts backing off. */
+const MAX_ATTEMPTS_BEFORE_LOCK = 5;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -43,16 +46,54 @@ export class AuthService {
       include: { organization: true },
     });
 
+    if (user?.lockedUntil && user.lockedUntil > new Date()) {
+      const seconds = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 1000);
+      throw new UnauthorizedException(`Too many failed attempts. Try again in ${seconds} seconds.`);
+    }
+
     // Compare against a dummy hash when the user is missing so that a wrong
-    // email and a wrong password take the same amount of time to reject.
+    // email and a wrong password take the same amount of time to reject, and an
+    // attacker cannot use response timing to enumerate accounts.
     const hash = user?.passwordHash ?? '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv';
     const matches = await bcrypt.compare(dto.password, hash);
 
     if (!user || !matches) {
+      if (user) {
+        await this.recordFailedLogin(user.id, user.failedLogins);
+      }
+
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    if (user.failedLogins > 0) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { failedLogins: 0, lockedUntil: null },
+      });
+    }
+
     return this.issueToken(user);
+  }
+
+  /**
+   * Locks the account for a growing window once the attempts pass the
+   * threshold: 1, 2, 4, 8 … minutes, capped at an hour. Backing off rather than
+   * locking outright keeps a forgetful owner from being shut out for good while
+   * still making an online guessing attack hopeless.
+   */
+  private async recordFailedLogin(userId: string, previousFailures: number): Promise<void> {
+    const failures = previousFailures + 1;
+    const overThreshold = failures - MAX_ATTEMPTS_BEFORE_LOCK;
+
+    const lockedUntil =
+      overThreshold >= 0
+        ? new Date(Date.now() + Math.min(2 ** overThreshold, 60) * 60_000)
+        : null;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { failedLogins: failures, lockedUntil },
+    });
   }
 
   /**
