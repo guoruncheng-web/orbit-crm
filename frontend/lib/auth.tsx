@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, AuthResponse, AuthUser, api, tokenStore } from "./api";
 
 type AuthState = {
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthState["status"]>("loading");
 
@@ -47,11 +49,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const accept = useCallback((response: AuthResponse) => {
-    tokenStore.write(response.accessToken);
-    setUser(response.user);
-    setStatus("authenticated");
-  }, []);
+  const forgetCachedWorkspace = useCallback(() => queryClient.clear(), [queryClient]);
+
+  const accept = useCallback(
+    (response: AuthResponse) => {
+      forgetCachedWorkspace();
+      tokenStore.write(response.accessToken);
+      setUser(response.user);
+      setStatus("authenticated");
+    },
+    [forgetCachedWorkspace],
+  );
 
   const signIn = useCallback<AuthState["signIn"]>(
     async (email, password) => {
@@ -73,11 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [accept]);
 
   const signOut = useCallback(() => {
+    forgetCachedWorkspace();
     tokenStore.clear();
     setUser(null);
     setStatus("anonymous");
     router.replace("/login");
-  }, [router]);
+  }, [forgetCachedWorkspace, router]);
 
   const value = useMemo<AuthState>(
     () => ({ user, status, signIn, signUp, startDemo, signOut }),

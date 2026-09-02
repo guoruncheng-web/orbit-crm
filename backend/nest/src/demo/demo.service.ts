@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from '../auth/auth.service';
 import { AuthResponseDto } from '../auth/dto/auth.dto';
@@ -10,9 +10,8 @@ import { DEMO_ORGANIZATION_NAME, DEMO_OWNER_NAME, buildDemoCustomerRows } from '
 const SANDBOX_TTL_HOURS = 24;
 
 /**
- * Ceiling on live sandboxes. The reaper below normally keeps the count far under
- * this; the cap is what bounds the table if someone hammers the endpoint, since
- * an unauthenticated create is otherwise free to call in a loop.
+ * Ceiling on live sandboxes. New sessions are refused at the ceiling instead
+ * of evicting an existing visitor's still-valid workspace.
  */
 const MAX_LIVE_SANDBOXES = 200;
 
@@ -38,6 +37,11 @@ export class DemoService {
   async createSandbox(): Promise<AuthResponseDto> {
     await this.reap();
 
+    const live = await this.prisma.organization.count({ where: { isDemo: true } });
+    if (live >= MAX_LIVE_SANDBOXES) {
+      throw new HttpException('The public demo is at capacity. Please try again later.', HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     const id = randomUUID();
 
     const user = await this.prisma.user.create({
@@ -60,8 +64,7 @@ export class DemoService {
   }
 
   /**
-   * Deletes expired sandboxes, then trims the oldest survivors if the cap is
-   * still exceeded. Runs inline on each request instead of on a schedule: the
+   * Deletes expired sandboxes. Runs inline on each request instead of on a schedule: the
    * Hobby plan allows one cron trigger a day, which is far too coarse, and the
    * work is a single indexed delete.
    *
@@ -80,22 +83,6 @@ export class DemoService {
         this.logger.log(`Reaped ${count} expired demo workspace(s)`);
       }
 
-      const live = await this.prisma.organization.count({ where: { isDemo: true } });
-
-      if (live >= MAX_LIVE_SANDBOXES) {
-        const surplus = await this.prisma.organization.findMany({
-          where: { isDemo: true },
-          orderBy: { createdAt: 'asc' },
-          take: live - MAX_LIVE_SANDBOXES + 1,
-          select: { id: true },
-        });
-
-        await this.prisma.organization.deleteMany({
-          where: { id: { in: surplus.map((organization) => organization.id) } },
-        });
-
-        this.logger.warn(`Demo workspace cap reached; trimmed ${surplus.length} of the oldest`);
-      }
     } catch (error) {
       // Cleanup failing is not a reason to deny someone a demo.
       this.logger.error('Demo workspace cleanup failed', error as Error);

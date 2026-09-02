@@ -168,7 +168,7 @@ twelve months, so the revenue chart has a real shape on first run.
 
 ```bash
 cd backend/nest && pnpm test:e2e     # 12 tests, needs a database
-cd frontend      && pnpm test        # 25 tests, no database
+cd frontend      && pnpm test        # 27 tests, no database
 ```
 
 **The API suite is about the tenant boundary**, because that is the one property

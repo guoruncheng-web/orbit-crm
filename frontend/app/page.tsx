@@ -106,6 +106,10 @@ function Dashboard({
     queryFn: () => api<Summary>("/dashboard/summary"),
   });
 
+  useEffect(() => {
+    if (isUnauthorized(customers.error) || isUnauthorized(summary.error)) onSignOut();
+  }, [customers.error, summary.error, onSignOut]);
+
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["customers"] });
     void queryClient.invalidateQueries({ queryKey: ["summary"] });
