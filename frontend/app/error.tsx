@@ -23,13 +23,13 @@ export default function WorkspaceError({
 
   return (
     <div className="boot">
-      <h1 style={{ fontSize: 18, margin: 0 }}>Something broke in the browser.</h1>
+      <h1 style={{ fontSize: 18, margin: 0 }}>页面暂时出现异常</h1>
       <p style={{ maxWidth: 460, textAlign: "center" }}>
-        Your workspace and its data are safe on the server. Trying again reloads this screen from scratch.
+        工作空间与数据仍安全保存在服务器，重新尝试会刷新当前页面。
       </p>
 
       <button className="primary" onClick={reset}>
-        Try again
+        重新尝试
       </button>
 
       {error.digest && <p className="mono" style={{ fontSize: 11 }}>{error.digest}</p>}

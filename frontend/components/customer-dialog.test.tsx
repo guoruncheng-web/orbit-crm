@@ -95,11 +95,11 @@ describe("CustomerDialog", () => {
     const fetchMock = stubFetch();
     renderDialog();
 
-    await user.type(screen.getByLabelText(/full name/i), "Jamie Chen");
-    await user.type(screen.getByLabelText(/company/i), "Acme Inc.");
-    await user.type(screen.getByLabelText(/email/i), "jamie@acme.com");
-    await user.type(screen.getByLabelText(/contract value/i), "12000");
-    await user.click(screen.getByRole("button", { name: /add customer/i }));
+    await user.type(screen.getByLabelText(/姓名/), "Jamie Chen");
+    await user.type(screen.getByLabelText(/公司/), "Acme Inc.");
+    await user.type(screen.getByLabelText(/邮箱/), "jamie@acme.com");
+    await user.type(screen.getByLabelText(/合同金额/), "12000");
+    await user.click(screen.getByRole("button", { name: /添加客户/ }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
@@ -117,9 +117,9 @@ describe("CustomerDialog", () => {
   it("prefills from the customer being edited", () => {
     renderDialog({ customer: CUSTOMER });
 
-    expect(screen.getByLabelText(/full name/i)).toHaveValue("Olivia Martin");
-    expect(screen.getByLabelText(/contract value/i)).toHaveValue(18400);
-    expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/姓名/)).toHaveValue("Olivia Martin");
+    expect(screen.getByLabelText(/合同金额/)).toHaveValue(18400);
+    expect(screen.getByRole("button", { name: /保存修改/ })).toBeInTheDocument();
   });
 
   it("patches only what changed, so a concurrent edit elsewhere survives", async () => {
@@ -127,10 +127,10 @@ describe("CustomerDialog", () => {
     const fetchMock = stubFetch();
     renderDialog({ customer: CUSTOMER });
 
-    const company = screen.getByLabelText(/company/i);
+    const company = screen.getByLabelText(/公司/);
     await user.clear(company);
     await user.type(company, "Northstar Laboratories");
-    await user.click(screen.getByRole("button", { name: /save changes/i }));
+    await user.click(screen.getByRole("button", { name: /保存修改/ }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
@@ -145,7 +145,7 @@ describe("CustomerDialog", () => {
     const onClose = vi.fn();
     renderDialog({ customer: CUSTOMER, onClose });
 
-    await user.click(screen.getByRole("button", { name: /save changes/i }));
+    await user.click(screen.getByRole("button", { name: /保存修改/ }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(fetchMock).not.toHaveBeenCalled();
@@ -164,10 +164,10 @@ describe("CustomerDialog", () => {
     );
     renderDialog({ customer: CUSTOMER });
 
-    const company = screen.getByLabelText(/company/i);
+    const company = screen.getByLabelText(/公司/);
     await user.clear(company);
     await user.type(company, "Anything");
-    await user.click(screen.getByRole("button", { name: /save changes/i }));
+    await user.click(screen.getByRole("button", { name: /保存修改/ }));
 
     expect(await screen.findByText("email must be an email")).toBeInTheDocument();
   });
@@ -186,10 +186,10 @@ describe("CustomerDialog", () => {
     const onClose = vi.fn();
     renderDialog({ customer: CUSTOMER, onClose });
 
-    const company = screen.getByLabelText(/company/i);
+    const company = screen.getByLabelText(/公司/);
     await user.clear(company);
     await user.type(company, "Anything");
-    await user.click(screen.getByRole("button", { name: /save changes/i }));
+    await user.click(screen.getByRole("button", { name: /保存修改/ }));
 
     await screen.findByText("nope");
     expect(onClose).not.toHaveBeenCalled();

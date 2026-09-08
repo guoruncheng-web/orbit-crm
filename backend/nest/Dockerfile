@@ -1,19 +1,20 @@
 FROM node:22-alpine AS build
 WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 
-COPY package*.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN pnpm exec prisma generate
 
-COPY tsconfig*.json nest-cli.json ./
-COPY src ./src
-RUN npm run build && npm prune --omit=dev
+COPY . .
+RUN pnpm build && pnpm prune --prod
 
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apk add --no-cache openssl
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
@@ -22,4 +23,4 @@ COPY package.json ./
 
 EXPOSE 8080
 # Apply pending migrations before serving, so a fresh database is usable on boot.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/src/main"]

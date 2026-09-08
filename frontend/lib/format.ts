@@ -1,6 +1,6 @@
 /** Formatting shared by the dashboard and its dialogs. */
 
-const USD = new Intl.NumberFormat("en-US", {
+const USD = new Intl.NumberFormat("zh-CN", {
   style: "currency",
   currency: "USD",
   maximumFractionDigits: 0,
@@ -20,7 +20,7 @@ export function count(value?: number): string {
  * west of the server, which a bare `new Date("2026-08-09")` would not.
  */
 export function formatDate(iso: string): string {
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("zh-CN", {
     month: "short",
     day: "numeric",
     year: "numeric",

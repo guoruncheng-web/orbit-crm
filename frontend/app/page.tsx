@@ -58,7 +58,7 @@ export default function DashboardPage() {
         <span className="brand-mark">
           <Command size={18} />
         </span>
-        <p>Opening your workspace…</p>
+        <p>正在打开工作空间…</p>
       </div>
     );
   }
@@ -137,7 +137,7 @@ function Dashboard({
     () =>
       (summary.data?.revenue ?? []).map((point) => ({
         label: new Date(`${point.month}-01T00:00:00Z`).toLocaleDateString(
-          "en-US",
+          "zh-CN",
           {
             month: "short",
             timeZone: "UTC",
@@ -171,14 +171,14 @@ function Dashboard({
           <button
             className="mobile-close"
             onClick={() => setMobileNav(false)}
-            aria-label="Close navigation"
+            aria-label="关闭导航"
           >
             <X />
           </button>
         </div>
 
         <nav>
-          <p className="nav-label">Workspace</p>
+          <p className="nav-label">工作空间</p>
           <button
             className={`nav-item ${view === "overview" ? "active" : ""}`}
             aria-current={view === "overview" ? "page" : undefined}
@@ -188,7 +188,7 @@ function Dashboard({
             }}
           >
             <LayoutDashboard />
-            Overview
+            总览
           </button>
           <button
             className={`nav-item ${view === "customers" ? "active" : ""}`}
@@ -199,32 +199,32 @@ function Dashboard({
             }}
           >
             <Users />
-            Customers
+            客户
             <span className="nav-count">{summary.data?.customers ?? "—"}</span>
           </button>
           {/* Marked rather than hidden: the demo shows what is built, and says
               plainly what is not, instead of offering links that go nowhere. */}
           <button className="nav-item" disabled>
             <BriefcaseBusiness />
-            Projects
-            <span className="chip">Soon</span>
+            项目
+            <span className="chip">规划中</span>
           </button>
           <button className="nav-item" disabled>
             <Activity />
-            Activity
-            <span className="chip">Soon</span>
+            动态
+            <span className="chip">规划中</span>
           </button>
 
-          <p className="nav-label second">Manage</p>
+          <p className="nav-label second">管理</p>
           <button className="nav-item" disabled>
             <Settings />
-            Settings
-            <span className="chip">Soon</span>
+            设置
+            <span className="chip">规划中</span>
           </button>
           <button className="nav-item" disabled>
             <CircleHelp />
-            Help
-            <span className="chip">Soon</span>
+            帮助
+            <span className="chip">规划中</span>
           </button>
         </nav>
 
@@ -237,8 +237,8 @@ function Dashboard({
           <button
             className="sign-out"
             onClick={onSignOut}
-            title="Sign out"
-            aria-label="Sign out"
+            title="退出登录"
+            aria-label="退出登录"
           >
             <LogOut />
           </button>
@@ -254,11 +254,14 @@ function Dashboard({
           <button
             className="menu"
             onClick={() => setMobileNav(true)}
-            aria-label="Open navigation"
+            aria-label="打开导航"
           >
             <Menu />
           </button>
           <div className="mobile-logo">orbit</div>
+          <a className="language-link" href="https://orbit-crm-web-xi.vercel.app" target="_blank" rel="noreferrer">
+            English ↗
+          </a>
           <AccountMenu user={user} onSignOut={onSignOut} />
         </header>
 
@@ -266,24 +269,24 @@ function Dashboard({
           <section className="welcome">
             <div>
               <p className="eyebrow">
-                {view === "overview" ? todayLabel() : "Workspace"}
+                {view === "overview" ? todayLabel() : "工作空间"}
               </p>
               <h1>
                 {view === "overview"
                   ? `${greeting()}, ${user.name.split(" ")[0]}.`
-                  : "Customers"}
+                  : "客户管理"}
               </h1>
               <p className="welcome-sub">
                 {view === "customers"
-                  ? "Every account on your book, searchable and filterable."
+                  ? "所有客户均可搜索、筛选并更新状态。"
                   : summary.data
-                    ? `${summary.data.customers} accounts on the books.`
-                    : "Reading your book of business…"}
+                    ? `当前共管理 ${summary.data.customers} 位客户。`
+                    : "正在读取客户数据…"}
               </p>
             </div>
             <button className="primary" onClick={() => setShowCreate(true)}>
               <Plus />
-              Add customer
+              添加客户
             </button>
           </section>
 
@@ -294,13 +297,13 @@ function Dashboard({
               <section className="book">
                 <div className="book-head">
                   <div>
-                    <p className="card-label">Book of business</p>
+                    <p className="card-label">客户合同总览</p>
                     <div className="book-total">
                       <strong className="pipeline-figure">
                         {money(summary.data?.pipeline)}
                       </strong>
                       <span>
-                        across {summary.data?.customers ?? "—"} accounts
+                        来自 {summary.data?.customers ?? "—"} 位客户
                       </span>
                     </div>
                   </div>
@@ -309,7 +312,7 @@ function Dashboard({
                 <div
                   className="bar"
                   role="group"
-                  aria-label="Contract value by status"
+                  aria-label="按客户状态统计合同金额"
                 >
                   {summary.isLoading && (
                     <span
@@ -329,7 +332,7 @@ function Dashboard({
                         className={`bar-segment ${entry.toLowerCase()}`}
                         style={{ flexGrow: row.value }}
                         aria-pressed={status === entry}
-                        title={`${STATUS_LABEL[entry]} — ${money(row.value)} across ${row.count} accounts`}
+                        title={`${STATUS_LABEL[entry]} — ${money(row.value)}，共 ${row.count} 位客户`}
                         onClick={() => setStatus(status === entry ? "" : entry)}
                       >
                         {money(row.value)}
@@ -350,32 +353,32 @@ function Dashboard({
                       </span>
                     );
                   })}
-                  <span className="bar-hint">Select a band to filter</span>
+                  <span className="bar-hint">点击色块筛选客户</span>
                 </div>
               </section>
 
               <section className="metrics">
                 <Metric
                   icon={<Wallet />}
-                  label="Pipeline value"
+                  label="管道金额"
                   value={money(summary.data?.pipeline)}
                   loading={summary.isLoading}
                 />
                 <Metric
                   icon={<Users />}
-                  label="Total customers"
+                  label="客户总数"
                   value={count(summary.data?.customers)}
                   loading={summary.isLoading}
                 />
                 <Metric
                   icon={<BriefcaseBusiness />}
-                  label="Active accounts"
+                  label="合作中客户"
                   value={count(summary.data?.activeAccounts)}
                   loading={summary.isLoading}
                 />
                 <Metric
                   icon={<TrendingUp />}
-                  label="Conversion rate"
+                  label="转化率"
                   value={summary.data ? `${summary.data.conversionRate}%` : "—"}
                   loading={summary.isLoading}
                 />
@@ -384,10 +387,10 @@ function Dashboard({
               <article className="card revenue-card">
                 <div className="card-head">
                   <div>
-                    <p className="card-label">Value added per month</p>
-                    <h2>{money(addedThisYear)} in the last year</h2>
+                    <p className="card-label">每月新增合同金额</p>
+                    <h2>近一年累计 {money(addedThisYear)}</h2>
                   </div>
-                  <button className="quiet">12 months</button>
+                  <button className="quiet">近 12 个月</button>
                 </div>
                 <div className="chart">
                   <ResponsiveContainer width="100%" height="100%">
@@ -436,7 +439,7 @@ function Dashboard({
                           boxShadow: "0 12px 32px rgb(22 24 26 / 0.1)",
                           fontSize: 13,
                         }}
-                        formatter={(value) => [money(Number(value)), "Added"]}
+                        formatter={(value) => [money(Number(value)), "新增金额"]}
                       />
                       <Area
                         type="monotone"
@@ -455,13 +458,13 @@ function Dashboard({
           <section className="card customer-card">
             <div className="customer-title">
               <div>
-                <p className="card-label">Customers</p>
+                <p className="card-label">客户</p>
                 <h2>
-                  {status ? `${STATUS_LABEL[status]} accounts` : "All accounts"}
+                  {status ? `${STATUS_LABEL[status]}客户` : "全部客户"}
                 </h2>
               </div>
               <span className="result-count">
-                {customers.data?.totalElements ?? 0} shown
+                共 {customers.data?.totalElements ?? 0} 条
               </span>
             </div>
 
@@ -471,7 +474,7 @@ function Dashboard({
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search name, company or email"
+                  placeholder="搜索姓名、公司或邮箱"
                 />
               </label>
               <select
@@ -479,9 +482,9 @@ function Dashboard({
                 onChange={(event) =>
                   setStatus(event.target.value as Status | "")
                 }
-                aria-label="Filter by status"
+                aria-label="按状态筛选"
               >
-                <option value="">All statuses</option>
+                <option value="">全部状态</option>
                 {STATUSES.map((entry) => (
                   <option key={entry} value={entry}>
                     {STATUS_LABEL[entry]}
@@ -494,10 +497,10 @@ function Dashboard({
               <table>
                 <thead>
                   <tr>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th>Value</th>
-                    <th>Last contact</th>
+                    <th>客户</th>
+                    <th>状态</th>
+                    <th>合同金额</th>
+                    <th>最近联系</th>
                     <th />
                   </tr>
                 </thead>
@@ -544,12 +547,12 @@ function Dashboard({
                       <td colSpan={5} className="state error">
                         <strong>
                           {isUnauthorized(customers.error)
-                            ? "Your session ended"
-                            : "Could not reach the API"}
+                            ? "登录已失效"
+                            : "暂时无法连接服务"}
                         </strong>
                         {isUnauthorized(customers.error)
-                          ? "Sign in again to pick up where you left off."
-                          : "Check the connection and try again."}
+                          ? "请重新登录后继续。"
+                          : "请检查网络后重试。"}
                       </td>
                     </tr>
                   )}
@@ -575,7 +578,7 @@ function Dashboard({
                             className={`badge-select ${customer.status.toLowerCase()}`}
                             value={customer.status}
                             disabled={changeStatus.isPending}
-                            aria-label={`Status for ${customer.name}`}
+                            aria-label={`${customer.name} 的客户状态`}
                             onChange={(event) =>
                               changeStatus.mutate({
                                 id: customer.id,
@@ -602,16 +605,16 @@ function Dashboard({
                           <div className="row-actions">
                             <button
                               className="row-action"
-                              title={`Edit ${customer.name}`}
-                              aria-label={`Edit ${customer.name}`}
+                              title={`编辑 ${customer.name}`}
+                              aria-label={`编辑 ${customer.name}`}
                               onClick={() => setEditing(customer)}
                             >
                               <Pencil />
                             </button>
                             <button
                               className="row-action delete"
-                              title={`Delete ${customer.name}`}
-                              aria-label={`Delete ${customer.name}`}
+                              title={`删除 ${customer.name}`}
+                              aria-label={`删除 ${customer.name}`}
                               onClick={() => setPendingDelete(customer)}
                             >
                               <Trash2 />
@@ -626,8 +629,8 @@ function Dashboard({
                     rows.length === 0 && (
                       <tr>
                         <td colSpan={5} className="state">
-                          <strong>Nothing matches those filters</strong>
-                          Clear the search or pick a different status.
+                          <strong>没有符合条件的客户</strong>
+                          请清除搜索词或选择其他状态。
                         </td>
                       </tr>
                     )}
@@ -638,7 +641,7 @@ function Dashboard({
             {totalPages > 1 && (
               <div className="pagination">
                 <span>
-                  Page {page + 1} of {totalPages}
+                  第 {page + 1} 页，共 {totalPages} 页
                 </span>
                 <div>
                   <button
@@ -646,13 +649,13 @@ function Dashboard({
                     onClick={() => setPage((current) => current - 1)}
                   >
                     <ChevronLeft />
-                    Previous
+                    上一页
                   </button>
                   <button
                     disabled={page + 1 >= totalPages}
                     onClick={() => setPage((current) => current + 1)}
                   >
-                    Next
+                    下一页
                     <ChevronRight />
                   </button>
                 </div>
@@ -745,8 +748,7 @@ function AccountMenu({
             </span>
           </div>
           <p className="account-note">
-            Signed in to <strong>{user.organizationName}</strong>. Everything
-            you see belongs to this workspace alone.
+            当前登录到 <strong>{user.organizationName}</strong>，这里的数据仅属于该工作空间。
           </p>
           <button
             className="account-action"
@@ -754,7 +756,7 @@ function AccountMenu({
             onClick={onSignOut}
           >
             <LogOut />
-            Sign out
+            退出登录
           </button>
         </div>
       )}
@@ -803,7 +805,7 @@ function useDebounced<T>(value: T, delay: number): T {
 
 
 function todayLabel(): string {
-  return new Date().toLocaleDateString("en-US", {
+  return new Date().toLocaleDateString("zh-CN", {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -812,6 +814,6 @@ function todayLabel(): string {
 
 function greeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  return hour < 18 ? "Good afternoon" : "Good evening";
+  if (hour < 12) return "早上好";
+  return hour < 18 ? "下午好" : "晚上好";
 }

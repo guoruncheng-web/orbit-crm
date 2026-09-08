@@ -68,16 +68,16 @@ export function CustomerDialog({
     >
       <div className="modal-head">
         <div>
-          <p className="eyebrow">{editing ? "Edit account" : "New account"}</p>
+          <p className="eyebrow">{editing ? "编辑客户" : "新客户"}</p>
           <h2 id="customer-dialog-title">
-            {editing ? customer.name : "Add a customer"}
+            {editing ? customer.name : "添加客户"}
           </h2>
         </div>
         <button
           type="button"
           className="icon-button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="关闭"
         >
           <X />
         </button>
@@ -85,27 +85,27 @@ export function CustomerDialog({
 
       <div className="form-grid">
         <label>
-          Full name
+          姓名
           <input
             required
             value={form.name}
             onChange={(event) => setForm({ ...form, name: event.target.value })}
-            placeholder="Jamie Chen"
+            placeholder="陈晨"
           />
         </label>
         <label>
-          Company
+          公司
           <input
             required
             value={form.company}
             onChange={(event) =>
               setForm({ ...form, company: event.target.value })
             }
-            placeholder="Acme Inc."
+            placeholder="示例科技有限公司"
           />
         </label>
         <label className="wide">
-          Email address
+          邮箱地址
           <input
             required
             type="email"
@@ -115,7 +115,7 @@ export function CustomerDialog({
           />
         </label>
         <label>
-          Pipeline status
+          客户状态
           <select
             value={form.status}
             onChange={(event) =>
@@ -130,7 +130,7 @@ export function CustomerDialog({
           </select>
         </label>
         <label>
-          Contract value
+          合同金额
           <input
             required
             min="0"
@@ -147,20 +147,20 @@ export function CustomerDialog({
         <p className="form-error">
           {save.error instanceof Error
             ? save.error.message
-            : "Could not save this customer."}
+            : "无法保存该客户。"}
         </p>
       )}
 
       <div className="modal-actions">
         <button type="button" className="secondary" onClick={onClose}>
-          Cancel
+          取消
         </button>
         <button className="primary" disabled={save.isPending}>
           {save.isPending
-            ? "Saving…"
+            ? "保存中…"
             : editing
-              ? "Save changes"
-              : "Add customer"}
+              ? "保存修改"
+              : "添加客户"}
         </button>
       </div>
     </Modal>

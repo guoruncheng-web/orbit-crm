@@ -33,7 +33,7 @@ export default function LoginPage() {
       }
       router.replace("/");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong");
+      setError(caught instanceof Error ? caught.message : "登录失败，请稍后重试");
     } finally {
       setPending(false);
     }
@@ -47,7 +47,7 @@ export default function LoginPage() {
       await startDemo();
       router.replace("/");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not start the demo");
+      setError(caught instanceof Error ? caught.message : "暂时无法创建演示空间");
     } finally {
       setDemoPending(false);
     }
@@ -62,26 +62,28 @@ export default function LoginPage() {
           </span>
           <span>orbit</span>
         </div>
+        <a className="language-link" href="https://orbit-crm-web-xi.vercel.app" target="_blank" rel="noreferrer">
+          English version ↗
+        </a>
         <div className="auth-pitch">
-          <h1>The workspace behind every client relationship.</h1>
+          <h1>把每一段客户关系，放进清晰可执行的工作台。</h1>
           <p>
-            Track your pipeline, watch revenue build month over month, and know where every account
-            stands without opening a spreadsheet.
+            集中管理销售管道、客户状态与月度合同金额，不再依赖散落的表格。
           </p>
         </div>
         {/* These describe the workspace the demo hands out, so they match what
             is actually seeded rather than being decorative round numbers. */}
         <dl className="auth-stats">
           <div>
-            <dt>Pipeline</dt>
+            <dt>管道金额</dt>
             <dd>$428,900</dd>
           </div>
           <div>
-            <dt>Accounts</dt>
+            <dt>客户数</dt>
             <dd>28</dd>
           </div>
           <div>
-            <dt>Conversion</dt>
+            <dt>转化率</dt>
             <dd>53.6%</dd>
           </div>
         </dl>
@@ -89,35 +91,35 @@ export default function LoginPage() {
 
       <section className="auth-panel">
         <form className="auth-form" onSubmit={submit}>
-          <p className="eyebrow">{mode === "signin" ? "Welcome back" : "Get started"}</p>
-          <h2>{mode === "signin" ? "Sign in to Orbit" : "Create your workspace"}</h2>
+          <p className="eyebrow">{mode === "signin" ? "欢迎回来" : "开始使用"}</p>
+          <h2>{mode === "signin" ? "登录 Orbit" : "创建工作空间"}</h2>
 
           {mode === "signup" && (
             <>
               <label>
-                Your name
+                您的姓名
                 <input
                   required
                   autoComplete="name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Alex Morgan"
+                  placeholder="陈晨"
                 />
               </label>
               <label>
-                Workspace name
+                工作空间名称
                 <input
                   required
                   value={form.organizationName}
                   onChange={(e) => setForm({ ...form, organizationName: e.target.value })}
-                  placeholder="Acme Studio"
+                  placeholder="超凡工作室"
                 />
               </label>
             </>
           )}
 
           <label>
-            Email address
+            邮箱地址
             <input
               required
               type="email"
@@ -129,7 +131,7 @@ export default function LoginPage() {
           </label>
 
           <label>
-            Password
+            密码
             <input
               required
               type="password"
@@ -137,7 +139,7 @@ export default function LoginPage() {
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder={mode === "signup" ? "At least 8 characters" : "••••••••"}
+              placeholder={mode === "signup" ? "至少 8 个字符" : "••••••••"}
             />
           </label>
 
@@ -145,25 +147,24 @@ export default function LoginPage() {
 
           <button className="primary auth-submit" disabled={pending}>
             {pending ? <Loader2 className="spin" /> : null}
-            {mode === "signin" ? "Sign in" : "Create workspace"}
+            {mode === "signin" ? "登录" : "创建工作空间"}
             {!pending && <ArrowRight />}
           </button>
 
           <div className="auth-divider">
-            <span>or</span>
+            <span>或</span>
           </div>
 
           <button type="button" className="auth-demo" onClick={exploreDemo} disabled={demoPending}>
             {demoPending ? <Loader2 className="spin" /> : <Sparkles />}
-            {demoPending ? "Building your workspace…" : "Explore the demo"}
+            {demoPending ? "正在创建专属空间…" : "直接体验演示"}
           </button>
           <p className="auth-demo-note">
-            Opens a private workspace with sample data. Change anything you like — it is yours alone
-            and disappears after a day.
+            自动创建带示例数据的独立空间，可自由增删修改，24 小时后自动清理。
           </p>
 
           <p className="auth-switch">
-            {mode === "signin" ? "No workspace yet?" : "Already have an account?"}{" "}
+            {mode === "signin" ? "还没有工作空间？" : "已经有账号？"}{" "}
             <button
               type="button"
               onClick={() => {
@@ -171,7 +172,7 @@ export default function LoginPage() {
                 setError(null);
               }}
             >
-              {mode === "signin" ? "Create one" : "Sign in"}
+              {mode === "signin" ? "立即创建" : "去登录"}
             </button>
           </p>
         </form>
